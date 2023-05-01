@@ -1,0 +1,43 @@
+service: aws-tli
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: dev
+
+  environment:
+    TELEGRAM_TOKEN: ${env:TELEGRAM_TOKEN}
+    GROUP_ID: ${env:GROUP_ID}
+    FSO_RSS_ID: ${env:FSO_RSS_ID}
+    FSO_BOX_ID: ${env:FSO_BOX_ID}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ec2:DescribeInstances
+      Resource:
+        - "*"
+
+    - Effect: Allow
+      Action:
+        - ec2:DescribeInstanceStatus
+        - ec2:DescribeAddresses
+        - ec2:StartInstances
+        - ec2:StopInstances
+      Resource:
+        - "*"
+        # TODO: Not sure why this is not working. Limit the permission to only specific instances
+        # - arn:aws:ec2:${self:provider.region}:${self.provider.accountId}:instance/${self:provider.environment.FSO_RSS_ID}
+
+functions:
+  tli:
+    handler: tli.handler
+    memorySize: 256
+    events:
+      - http:
+          path: tli
+          method: post
+          integration: lambda
+          cors: true
